@@ -14,7 +14,8 @@ MODULE_LICENSE("GPL");
 #define BUFFER_SIZE 900
 void *memory=NULL;//this is where we will write to
 const char * name = "My Driver";
-
+int timesOpened = 0;
+int timesClosed = 0;
 ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
                          loff_t *offset) {
   /*
@@ -49,7 +50,10 @@ int char_driver_open(struct inode *pinode, struct file *pfile) {
    print to the kernel log that the device has been opened, and also print the
    number of times the device has been opened until now.
    */
-  return 0;
+    //increment times opened
+    timesOpened ++;
+    prinkk(KERN_ALERT "Device opened. Device has been opened %i times\n", timesOpened);
+    return 0;
 }
 
 int char_driver_close(struct inode *pinode, struct file *pfile) {
@@ -58,7 +62,9 @@ int char_driver_close(struct inode *pinode, struct file *pfile) {
    print to the kernel log that the device has been closed, and also print the
    number of times the device has been closed until now.
    */
-  return 0;
+    timesClosed++
+    prinkk(KERN_ALERT "Device closed Device has been closed %i times\n", timesClosed);
+    return 0;
 }
 
 loff_t char_driver_seek(struct file *pfile, loff_t offset, int whence) {
@@ -109,7 +115,11 @@ static int char_driver_init(void) {
         return 1;
     }
     printk(KERN_ALERT "init function called\n");
-    return 0;
+    //return 0;
+
+
+    //test functions
+    char_driver_open();
 }
 
 static void char_driver_exit(void) {
