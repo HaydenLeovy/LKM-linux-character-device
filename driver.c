@@ -38,12 +38,26 @@ ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
    TODO:
    buffer is the userspace buffer where you are writing the data you want to be
    written into the device file
-
+    
    length is the length of the userspace buffer
 
    offset will be set to current position of the opened file
    */
-  return length;
+   //dereference offset
+    const int offsetInt = *offset; 
+    const int lengthInt = (int) length;
+   //make sure that write wont be larger than buffer
+    if((offsetInt + lengthInt) > BUFFER_SIZE)
+    {
+        //print warning
+        printk(KERN_ALERT "Size is to big. Wrtining as much as is possible");
+        //set length to something that we can fit
+        lengthInt = BUFFER_SIZE - offsetInt;
+    }
+    //use copy to user to write to buffer
+    length = copy_from_user(memory, buffer, lengthInt);
+
+    return length;
 }
 
 int char_driver_open(struct inode *pinode, struct file *pfile) {
