@@ -16,7 +16,7 @@ void *memory=NULL;//this is where we will write to
 const char * name = "My Driver";
 int timesOpened = 0;
 int timesClosed = 0;
-int bufferMax = 900;
+int bufferMax = 9;
 
 
 ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
@@ -31,8 +31,11 @@ ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
    offset will be set to current position of the opened file after reading
    */
     
+   printk(KERN_INFO "Entering read\n");
     int offsetInt = *offset;
-    int lengthInt = (int) length;
+    int lengthInt = (int) length; 
+    printk(KERN_INFO "offsetInt: %i \n", offsetInt);
+    printk(KERN_INFO "length Int: %i \n", lengthInt);
     //make sure length isnt more than our kernel buffer
     if((offsetInt + lengthInt) > bufferMax)
     {
@@ -40,6 +43,7 @@ ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
         printk(KERN_INFO "Size is to big. reading as much as is possible\n");
         //set length to something that we can fit
         lengthInt = bufferMax - offsetInt;
+        printk(KERN_INFO "New length Int: %i \n", lengthInt);
     }
     //copy to user
     int failCheck = copy_to_user(buffer, memory + offsetInt, lengthInt);
@@ -55,7 +59,7 @@ ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
     //update offset by adding bytes written to offset
     offsetInt = offsetInt + lengthInt;
     *offset = offsetInt;
-    return 0;;
+    return 0;
 }
 
 ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
@@ -69,9 +73,12 @@ ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
 
    offset will be set to current position of the opened file
    */
+  printk(KERN_INFO "Entering write\n");
    //dereference offset
     int offsetInt = *offset; 
     int lengthInt = (int) length;
+    printk(KERN_INFO "offsetInt: %i \n", offsetInt);
+    printk(KERN_INFO "length Int: %i \n", lengthInt);
    //make sure that write wont be larger than buffer
     if((offsetInt + lengthInt) > bufferMax)
     {
@@ -105,6 +112,7 @@ int char_driver_open(struct inode *pinode, struct file *pfile) {
    print to the kernel log that the device has been opened, and also print the
    number of times the device has been opened until now.
    */
+    printk(KERN_INFO "Entering open\n");
     //increment times opened
     timesOpened ++;
     printk(KERN_INFO "Device opened. Device has been opened %i times\n", timesOpened);
@@ -117,6 +125,7 @@ int char_driver_close(struct inode *pinode, struct file *pfile) {
    print to the kernel log that the device has been closed, and also print the
    number of times the device has been closed until now.
    */
+    printk(KERN_INFO "Entering close\n");
     timesClosed++;
     printk(KERN_INFO "Device closed Device has been closed %i times\n", timesClosed);
     return 0;
@@ -130,9 +139,15 @@ loff_t char_driver_seek(struct file *pfile, loff_t offset, int whence) {
    update the opened file's position according to the values of offset and
    whence.
    */
+    if(whence == 0) //0 means set offset to begining of file
+    {
+        return offset;
+    }
+    if(whence == 1)
+    {
 
-
-  return 0;
+    }
+    return 0;
 }
 
 struct file_operations char_driver_file_operations = {
@@ -165,7 +180,7 @@ static int char_driver_init(void) {
     else
     {
         printk(KERN_INFO "register fail\n"); 
-        unregister_chrdev(511, "My Driver");
+        //unregister_chrdev(511, "My Driver");
         return 1;
     }
     //allocate memory
@@ -176,8 +191,9 @@ static int char_driver_init(void) {
     }
     printk(KERN_INFO "init function called\n");
     //zero times opened and closed
-    timesOpened = 0;
-    timesClosed = 0;
+    //timesOpened = 0;
+    //timesClosed = 0;
+    printk(KERN_INFO "About to return\n");
     return 0;
 }
 
@@ -190,6 +206,9 @@ static void char_driver_exit(void) {
     unregister_chrdev(511, "My Driver");
     kfree(memory);
     printk(KERN_INFO "exit function called\n");
+    //zero times opened and closed
+    timesOpened = 0;
+    timesClosed = 0;
 }
 
 /*
