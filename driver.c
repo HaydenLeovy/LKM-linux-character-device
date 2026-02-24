@@ -59,7 +59,7 @@ ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
     //update offset by adding bytes written to offset
     offsetInt = offsetInt + lengthInt;
     *offset = offsetInt;
-    return 0;
+    return lengthInt;
 }
 
 ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
