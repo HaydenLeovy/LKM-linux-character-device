@@ -16,6 +16,7 @@ void *memory=NULL;//this is where we will write to
 const char * name = "My Driver";
 int timesOpened = 0;
 int timesClosed = 0;
+int bufferMax = 900;
 
 
 ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
@@ -30,26 +31,31 @@ ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
    offset will be set to current position of the opened file after reading
    */
     
-    const int offsetInt = *offset;
+    int offsetInt = *offset;
     int lengthInt = (int) length;
     //make sure length isnt more than our kernel buffer
-    if((offsetInt + lengthInt) > BUFFER_SIZE)
+    if((offsetInt + lengthInt) > bufferMax)
     {
         //print warning
-        printk(KERN_ALERT "Size is to big. reading as much as is possible");
+        printk(KERN_INFO "Size is to big. reading as much as is possible\n");
         //set length to something that we can fit
-        lengthInt = BUFFER_SIZE - offsetInt;
+        lengthInt = bufferMax - offsetInt;
     }
     //copy to user
-    int failCheck = copy_to_user(buffer, memory, lengthInt);
+    int failCheck = copy_to_user(buffer, memory + offsetInt, lengthInt);
     if(failCheck != 0)
     {
-        printk(KERN_ALERT "Read failed");
+        printk(KERN_INFO "Read failed\n");
         return -1;
     }
+    else
+    {
+        printk(KERN_INFO "Read success\n");
+    }
     //update offset by adding bytes written to offset
-    *offsetInt = *offsetInt + lengthInt;
-    return 0;
+    offsetInt = offsetInt + lengthInt;
+    *offset = offsetInt;
+    return 0;;
 }
 
 ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
@@ -64,27 +70,32 @@ ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
    offset will be set to current position of the opened file
    */
    //dereference offset
-    const int offsetInt = *offset; 
-    const int lengthInt = (int) length;
+    int offsetInt = *offset; 
+    int lengthInt = (int) length;
    //make sure that write wont be larger than buffer
-    if((offsetInt + lengthInt) > BUFFER_SIZE)
+    if((offsetInt + lengthInt) > bufferMax)
     {
         //print warning
-        printk(KERN_ALERT "Size is to big. Wrtining as much as is possible");
+        printk(KERN_INFO "Size is to big. Wrtining as much as is possible\n");
         //set length to something that we can fit
-        lengthInt = BUFFER_SIZE - offsetInt;
+        lengthInt = bufferMax - offsetInt;
     }
     //use copy to user to write to buffer. Write from the offsetInt
-    int bytesWritten = copy_from_user(memory + (int)offsetInt, buffer, lengthInt);
+    int bytesWritten = copy_from_user(memory + offsetInt, buffer, lengthInt);
     //make sure that write was succesful
     if(bytesWritten != 0)//copy_from_user returns 0 on a success
     {
-        printk(KERN_ALERT "Write failed");
+        printk(KERN_INFO "Write failed\n");
         return -1;
     }
+    else
+    {
+        printk(KERN_INFO "Write success\n");
+    }
     //update offset by adding bytes written to offset
-    *offsetInt = *offsetInt + lengthInt;
-    prink(KERN_ALERT "Length copied %i", lengthInt);
+    offsetInt = offsetInt + lengthInt;
+    *offset = offsetInt;
+    printk(KERN_INFO "Length copied %i \n", lengthInt);
     return length;
 }
 
@@ -96,7 +107,7 @@ int char_driver_open(struct inode *pinode, struct file *pfile) {
    */
     //increment times opened
     timesOpened ++;
-    printk(KERN_ALERT "Device opened. Device has been opened %i times\n", timesOpened);
+    printk(KERN_INFO "Device opened. Device has been opened %i times\n", timesOpened);
     return 0;
 }
 
@@ -107,7 +118,7 @@ int char_driver_close(struct inode *pinode, struct file *pfile) {
    number of times the device has been closed until now.
    */
     timesClosed++;
-    printk(KERN_ALERT "Device closed Device has been closed %i times\n", timesClosed);
+    printk(KERN_INFO "Device closed Device has been closed %i times\n", timesClosed);
     return 0;
 }
 
@@ -120,7 +131,7 @@ loff_t char_driver_seek(struct file *pfile, loff_t offset, int whence) {
    whence.
    */
 
-   
+
   return 0;
 }
 
@@ -149,21 +160,21 @@ static int char_driver_init(void) {
     
     if(register_chrdev(511, name, &char_driver_file_operations) >= 0)//last argument expects a pointer so we pass memory address. 0 returned on success
     {
-        printk(KERN_ALERT "register success\n");
+        printk(KERN_INFO "register success\n");
     }
     else
     {
-        printk(KERN_ALERT "register fail\n"); 
+        printk(KERN_INFO "register fail\n"); 
         unregister_chrdev(511, "My Driver");
         return 1;
     }
     //allocate memory
     if((memory=kmalloc(BUFFER_SIZE, GFP_KERNEL)) == NULL)
     {
-        printk(KERN_ALERT "kmalloc failed");
+        printk(KERN_INFO "kmalloc failed\n");
         return 1;
     }
-    printk(KERN_ALERT "init function called\n");
+    printk(KERN_INFO "init function called\n");
     //zero times opened and closed
     timesOpened = 0;
     timesClosed = 0;
@@ -178,7 +189,7 @@ static void char_driver_exit(void) {
    */
     unregister_chrdev(511, "My Driver");
     kfree(memory);
-    printk(KERN_ALERT "exit function called\n");
+    printk(KERN_INFO "exit function called\n");
 }
 
 /*
