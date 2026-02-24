@@ -29,7 +29,27 @@ ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
 
    offset will be set to current position of the opened file after reading
    */
-  return 0;
+    
+    const int offsetInt = *offset;
+    int lengthInt = (int) length;
+    //make sure length isnt more than our kernel buffer
+    if((offsetInt + lengthInt) > BUFFER_SIZE)
+    {
+        //print warning
+        printk(KERN_ALERT "Size is to big. reading as much as is possible");
+        //set length to something that we can fit
+        lengthInt = BUFFER_SIZE - offsetInt;
+    }
+    //copy to user
+    int failCheck = copy_to_user(buffer, memory, lengthInt);
+    if(failCheck != 0)
+    {
+        printk(KERN_ALERT "Read failed");
+        return -1;
+    }
+    //update offset by adding bytes written to offset
+    *offsetInt = *offsetInt + lengthInt;
+    return 0;
 }
 
 ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
@@ -54,9 +74,17 @@ ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
         //set length to something that we can fit
         lengthInt = BUFFER_SIZE - offsetInt;
     }
-    //use copy to user to write to buffer
-    length = copy_from_user(memory, buffer, lengthInt);
-
+    //use copy to user to write to buffer. Write from the offsetInt
+    int bytesWritten = copy_from_user(memory + (int)offsetInt, buffer, lengthInt);
+    //make sure that write was succesful
+    if(bytesWritten != 0)//copy_from_user returns 0 on a success
+    {
+        printk(KERN_ALERT "Write failed");
+        return -1;
+    }
+    //update offset by adding bytes written to offset
+    *offsetInt = *offsetInt + lengthInt;
+    prink(KERN_ALERT "Length copied %i", lengthInt);
     return length;
 }
 
@@ -91,6 +119,8 @@ loff_t char_driver_seek(struct file *pfile, loff_t offset, int whence) {
    update the opened file's position according to the values of offset and
    whence.
    */
+
+   
   return 0;
 }
 
@@ -123,7 +153,8 @@ static int char_driver_init(void) {
     }
     else
     {
-       printk(KERN_ALERT "register fail\n"); 
+        printk(KERN_ALERT "register fail\n"); 
+        unregister_chrdev(511, "My Driver");
         return 1;
     }
     //allocate memory
