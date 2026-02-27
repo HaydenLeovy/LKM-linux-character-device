@@ -16,7 +16,7 @@ void *memory=NULL;//this is where we will write to
 const char * name = "My Driver";
 int timesOpened = 0;
 int timesClosed = 0;
-int bufferMax = 9;
+int bufferMax = 900;
 int currOffset = 0;//track the offset at the end of every read write
 
 ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
