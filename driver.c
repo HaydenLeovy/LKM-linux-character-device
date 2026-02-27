@@ -34,8 +34,8 @@ ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
    printk(KERN_INFO "Entering read\n");
     int offsetInt = *offset;
     int lengthInt = (int) length; 
-    printk(KERN_INFO "offsetInt: %i \n", offsetInt);
-    printk(KERN_INFO "length Int: %i \n", lengthInt);
+    //printk(KERN_INFO "offsetInt: %i \n", offsetInt);
+    //printk(KERN_INFO "length Int: %i \n", lengthInt);
     //make sure length isnt more than our kernel buffer
     if((offsetInt + lengthInt) > bufferMax)
     {
@@ -55,6 +55,7 @@ ssize_t char_driver_read(struct file *pfile, char __user *buffer, size_t length,
     else
     {
         printk(KERN_INFO "Read success\n");
+        printk(KERN_INFO "Bytes read %i \n", lengthInt);
     }
     //update offset by adding bytes written to offset
     offsetInt = offsetInt + lengthInt;
@@ -79,8 +80,8 @@ ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
    //dereference offset
     int offsetInt = *offset; 
     int lengthInt = (int) length;
-    printk(KERN_INFO "offsetInt: %i \n", offsetInt);
-    printk(KERN_INFO "length Int: %i \n", lengthInt);
+    //printk(KERN_INFO "offsetInt: %i \n", offsetInt);
+    //printk(KERN_INFO "length Int: %i \n", lengthInt);
    //make sure that write wont be larger than buffer
     if((offsetInt + lengthInt) > bufferMax)
     {
@@ -106,7 +107,7 @@ ssize_t char_driver_write(struct file *pfile, const char __user *buffer,
     *offset = offsetInt;
     //update current offset
     currOffset = *offset;
-    printk(KERN_INFO "Length copied %i \n", lengthInt);
+    printk(KERN_INFO "Bytes Written %i \n", lengthInt);
     return length;
 }
 
@@ -209,7 +210,7 @@ static int char_driver_init(void) {
     //zero times opened and closed
     //timesOpened = 0;
     //timesClosed = 0;
-    printk(KERN_INFO "About to return\n");
+    //printk(KERN_INFO "About to return\n");
     return 0;
 }
 
